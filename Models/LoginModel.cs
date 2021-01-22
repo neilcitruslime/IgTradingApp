@@ -6,10 +6,10 @@ namespace IgTrading.Models
     {
         [JsonProperty("identifier")]
 
-        public string Identifier { get; } = "neilcl";
+        public string Identifier { get; set;} 
 
         [JsonProperty("password")]
 
-        public string Password { get; } = "F@eryl1977";
+        public string Password { get; set;} 
     }
 }

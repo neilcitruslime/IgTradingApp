@@ -2,7 +2,6 @@ namespace IgTrading
 {
     public class IgOrder
     {
-
         public string currencyCode { get; set; }
         public string dealReference { get; set; }
         public string direction { get; set; }

@@ -9,9 +9,11 @@ namespace IgTrading
     public class IgAccounts
     {
         private EnumIgEnvironment environment;
+        private readonly LoginModel login;
 
-        public IgAccounts(EnumIgEnvironment environment)
+        public IgAccounts(EnumIgEnvironment environment, LoginModel login)
         {
+            this.login = login;
             this.environment = environment;
         }
 
@@ -19,7 +21,7 @@ namespace IgTrading
         {
             string action = "/accounts";
             HttpClient httpClient = ClientFactory.Create(igSession, 1);
-            IgTradingApiConfig igTradingApiConfig = new IgTradingApiConfig(environment);
+            IgTradingApiConfig igTradingApiConfig = new IgTradingApiConfig(environment, login);
 
             var response = httpClient.GetAsync(new Uri(igTradingApiConfig.EndPoint() + action)).Result;        
 

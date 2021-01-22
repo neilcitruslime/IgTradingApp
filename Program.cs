@@ -11,72 +11,43 @@ namespace IgTrading
 {
     public class Program
     {
-
-        [Verb("positions", HelpText = "Show positions.")]
-        class PositionOptions
-        {
-            [Option('a', "account", Required = false, HelpText = "The account you wish to query.")]
-            public string Account { get; set; }
-        }
-        [Verb("accounts", HelpText = "List Accounts.")]
-        class AccountOptions
-        {
-            
-        }
-
-        [Verb("updatestop", HelpText = "Update stop lose on all positions in account.")]
-        class UpdateOptions
-        {
-            [Option('s', "stop", Required = true, HelpText = "The stop value to set, above the open. e.g. If the position is above the open the stop will be set from the current position. If the position is below the open no change will be made")]
-            public int Stop {get;set;}
-        }
-
-        [Verb("quote", HelpText = "Retrieve quotes")]
-        class QuoteOptions
-        {
-            [Option('n', "names", Required = true, HelpText = "The comma seperated list of names you wish to search for.")]
-            public string NamesToSearch { get; set; }
-
-            [Option("prefix", Required = false, HelpText = "The epic prefix you wish to filter by.")]
-
-            public string EpicPrefix { get; set; }
-
-            [Option('e', "expiry", Required = true, HelpText = "The expiry DFB for daily contracts, e.g. MAR-21 for expirty in March 2021.")]
-
-            public string Expiry { get; set; }
-        }
+        public static LoginModel login = new LoginModel();
 
         static EnumIgEnvironment environment = EnumIgEnvironment.Live;
         static SessionModel session;
 
         static IgTradingApiConfig igTradingApiConfig;
-        static AccountModels accountModels ; 
+        static AccountModels accountModels;
         static void Main(string[] args)
+        {
+            ReadConfiguration();
+
+            igTradingApiConfig = new IgTradingApiConfig(environment, login);
+
+            session = igTradingApiConfig.Session();
+            IgAccounts igAccounts = new IgAccounts(environment, login);
+            accountModels = igAccounts.Get(session);
+
+            CommandLine.Parser.Default.ParseArguments<PositionOptions, AccountOptions, QuoteOptions, OrderOptions>(args)
+               .MapResult(
+                   (PositionOptions opts) => PositionsList(opts),
+                   (AccountOptions opts) => ListAccounts(opts),
+                   (QuoteOptions opts) => Quote(opts),
+                   (OrderOptions opts) => Order(opts),
+                   errs => 1);
+        }
+
+        private static void ReadConfiguration()
         {
             IConfiguration config = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", false, true)
                 .AddJsonFile("appsettings-secure.json", true, true)
                 .Build();
 
-
-            Console.WriteLine($" Hello { config["apiKey"] } !");
-
-            igTradingApiConfig = new IgTradingApiConfig(environment);
-
-            session = igTradingApiConfig.Session();
-            IgAccounts igAccounts = new IgAccounts(environment);
-            accountModels = igAccounts.Get(session);
-
-            CommandLine.Parser.Default.ParseArguments<PositionOptions, AccountOptions, QuoteOptions>(args)
-               .MapResult(
-                   (PositionOptions opts) => PositionsList(opts),
-                   (AccountOptions opts) => ListAccounts(opts),
-                   (QuoteOptions opts) => Quote(opts),
-                   errs => 1);
-
-
+            ClientFactory.ApiKey = config["apiKey"];
+            login.Identifier = config["username"];
+            login.Password = config["password"];
         }
-
 
         private static int Quote(QuoteOptions opts)
         {
@@ -84,11 +55,41 @@ namespace IgTrading
             return 0;
         }
 
-        static int PositionsList(PositionOptions options)
+
+        private static int Order(OrderOptions options)
         {
             SwitchAccount(options.Account);
 
-            Positions();
+            float positionSize = 1F;
+
+            IgOrder igOrder = new IgOrder { epic = options.Epic, size = positionSize, currencyCode = "GBP", level = options.Level, limitDistance = options.LimitDistance, stopDistance = options.StopDistance, direction = options.Direction.ToUpper(), dealReference = $"NMCQReference{1}", expiry=options.Expiry };
+
+            IgMarkets igMarkets = new IgMarkets(environment, login);
+            igMarkets.GetEpic(session, options.Epic);
+            //PlaceOrder(igOrder);
+            return 0;
+
+        }
+        static int PositionsList(PositionOptions options)
+        {
+
+            List<string> accountIds = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(options.Account) == false)
+            {
+                accountIds.Add(options.Account);
+            }
+            else
+            {
+                accountModels.Accounts.ForEach(p => accountIds.Add(p.AccountId));
+            }
+
+            foreach (string accountId in accountIds)
+            {
+                SwitchAccount(accountId);
+                Positions();
+            }
+
             return 0;
         }
 
@@ -103,7 +104,7 @@ namespace IgTrading
 
         static int ListAccounts(AccountOptions options)
         {
-            
+
             Console.WriteLine($"{"Name".PadRight(15)}Profit\tBalance\t{"Type".PadRight(10)}ID\tAlias");
             foreach (Account account in accountModels.Accounts)
             {
@@ -135,7 +136,7 @@ namespace IgTrading
                         {
                             IgOrder igOrder = new IgOrder { epic = market.Epic, size = 1F, currencyCode = "GBP", level = (float)market.Bid, limitDistance = (float)(market.Bid * 0.2), stopDistance = (float)(market.Bid * 0.1), direction = "BUY", dealReference = $"NMCQ{i}", expiry = market.Expiry };
                             i++;
-                            Order(igOrder);
+                            PlaceOrder(igOrder);
                         }
 
                         break;
@@ -190,7 +191,7 @@ namespace IgTrading
 
                         foreach (PositionElement positionToAlter in positionsToReturn)
                         {
-                            IgPositions igPositions = new IgPositions(environment);
+                            IgPositions igPositions = new IgPositions(environment, login);
 
                             positionToAlter.Position.LimitLevel = positionToAlter.Market.Bid * 1.2;
                             double percentageIncrease = (positionToAlter.Market.Bid - positionToAlter.Position.OpenLevel) / positionToAlter.Position.OpenLevel;
@@ -214,7 +215,7 @@ namespace IgTrading
 
         public static List<PositionElement> Positions()
         {
-            IgPositions igPositions = new IgPositions(environment);
+            IgPositions igPositions = new IgPositions(environment, login);
             string positions = igPositions.Get(session);
 
             PositionsList positionsList = JsonConvert.DeserializeObject<PositionsList>(positions);
@@ -244,7 +245,7 @@ namespace IgTrading
 
         public static List<Market> MarketSearch(string query, string expiry, string prefix)
         {
-            IgMarkets igMarkets = new IgMarkets(environment);
+            IgMarkets igMarkets = new IgMarkets(environment, login);
             string[] quotes = query.Split(',');
 
             int count = 0;
@@ -277,28 +278,22 @@ namespace IgTrading
             return parsedList;
         }
 
-        public static void Order(IgOrder igOrder)
+        public static void PlaceOrder(IgOrder igOrder)
         {
-            IgWorkingOrder igWorkingOrder = new IgWorkingOrder(environment);
+            IgWorkingOrder igWorkingOrder = new IgWorkingOrder(environment, login);
             var response = igWorkingOrder.Post(session, igOrder);
             Console.WriteLine(response);
-            response = new IgConfirms(environment).GetConfirms(session, igOrder.dealReference);
+            response = new IgConfirms(environment, login).GetConfirms(session, igOrder.dealReference);
             Console.WriteLine(response);
         }
 
         public static void Buy(IgBuy igBuy)
         {
-            IgPositions igPosition = new IgPositions(environment);
+            IgPositions igPosition = new IgPositions(environment, login);
             var response = igPosition.Post(session, igBuy);
             Console.WriteLine(response);
-            response = new IgConfirms(environment).GetConfirms(session, igBuy.dealReference);
+            response = new IgConfirms(environment, login).GetConfirms(session, igBuy.dealReference);
             Console.WriteLine(response);
-        }
-
-        public static string FormatJson(string json)
-        {
-            return JValue.Parse(json).ToString(Formatting.Indented);
-        }
-
+        } 
     }
 }

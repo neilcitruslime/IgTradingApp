@@ -5,7 +5,7 @@ namespace IgTrading
 { 
     public class ClientFactory
     {
-        public static string ApiKey { get; } = "2ef94296b7191ab49ef9dd91804091b3252a4a4c";
+        public static string ApiKey { set; get; } 
 
         public static HttpClient Create()
         {

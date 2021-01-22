@@ -15,10 +15,12 @@
         private static string Live = "https://api.ig.com/";
 
         EnumIgEnvironment environment;
+        private readonly LoginModel login;
 
-        public IgTradingApiConfig(EnumIgEnvironment environment)
+        public IgTradingApiConfig(EnumIgEnvironment environment, LoginModel login)
         {
             this.environment = environment;
+            this.login = login;
         }
 
         public string EndPoint()
@@ -38,10 +40,8 @@
             string action = "/session";
 
             HttpClient httpClient = ClientFactory.Create();
-            var json = JsonConvert.SerializeObject(new LoginModel());
-
-
-            var content = new StringContent(JsonConvert.SerializeObject(new LoginModel()), Encoding.UTF8, "application/json");
+            
+            var content = new StringContent(JsonConvert.SerializeObject(login), Encoding.UTF8, "application/json");
 
             string Url = EndPoint() + action;
             var responseMessage = httpClient.PostAsync(new Uri(Url), content).Result;

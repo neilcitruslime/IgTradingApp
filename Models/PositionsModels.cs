@@ -113,7 +113,7 @@ namespace IgTrading.Models
 
     public enum Expiry { Dfb, Jun21, Mar21, Sep21 };
 
-    public enum InstrumentType { Shares };
+    public enum InstrumentType { Shares, Opt_Shares };
 
     public enum MarketStatus { Closed, EditsOnly };
 

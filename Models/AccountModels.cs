@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace IgTrading.Models
@@ -5,7 +6,7 @@ namespace IgTrading.Models
     public class AccountModels
     {
         [JsonProperty("accounts")]
-        public Account[] Accounts { get; set; }
+        public List<Account> Accounts { get; set; }
     }
 
     public partial class Account
