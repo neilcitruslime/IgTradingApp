@@ -27,8 +27,8 @@ Build and run the application in the console, and run the app with --help and it
 
 Examples 
 
-# Will enumerate all your accountsL
-ist positions including the total position size, and profits. 
+# List Your Postions
+List positions including the total position size, and profits. 
 
 dotnet run positions
 
