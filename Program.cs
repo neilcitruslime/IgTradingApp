@@ -5,7 +5,6 @@ using CommandLine;
 using IgTrading.Models;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace IgTrading
 {
@@ -28,12 +27,13 @@ namespace IgTrading
             IgAccounts igAccounts = new IgAccounts(environment, login);
             accountModels = igAccounts.Get(session);
 
-            CommandLine.Parser.Default.ParseArguments<PositionOptions, AccountOptions, QuoteOptions, OrderOptions>(args)
+            CommandLine.Parser.Default.ParseArguments<PositionOptions, AccountOptions, QuoteOptions, OrderOptions, UpdateOptions>(args)
                .MapResult(
                    (PositionOptions opts) => PositionsList(opts),
                    (AccountOptions opts) => ListAccounts(opts),
                    (QuoteOptions opts) => Quote(opts),
                    (OrderOptions opts) => Order(opts),
+                   (UpdateOptions opts) => Update(opts),
                    errs => 1);
         }
 
@@ -62,13 +62,38 @@ namespace IgTrading
 
             float positionSize = 1F;
 
-            IgOrder igOrder = new IgOrder { epic = options.Epic, size = positionSize, currencyCode = "GBP", level = options.Level, limitDistance = options.LimitDistance, stopDistance = options.StopDistance, direction = options.Direction.ToUpper(), dealReference = $"NMCQReference{1}", expiry=options.Expiry };
+            IgOrder igOrder = new IgOrder { epic = options.Epic, size = positionSize, currencyCode = "GBP", level = options.Level, limitDistance = options.LimitDistance, stopDistance = options.StopDistance, direction = options.Direction.ToUpper(), dealReference = $"NMCQReference{1}", expiry = options.Expiry };
 
             IgMarkets igMarkets = new IgMarkets(environment, login);
-            igMarkets.GetEpic(session, options.Epic);
-            //PlaceOrder(igOrder);
+            EpicModel epic = igMarkets.GetEpic(session, options.Epic);
+
+            Console.WriteLine($"Market Code {epic.instrument.newsCode} {epic.instrument.marketId} {epic.instrument.chartCode} Bid: {epic.snapshot.bid}");
+            PlaceOrder(igOrder);
             return 0;
 
+        }
+
+        private static int Update(UpdateOptions options)
+        {
+            SwitchAccount(options.Account);
+
+            List<PositionElement> positionsToReturn = Positions();
+            double stopPercentage = Convert.ToDouble(options.Value) / 100;
+
+            foreach (PositionElement positionToAlter in positionsToReturn)
+            {
+                IgPositions igPositions = new IgPositions(environment, login);
+
+                double percentageIncrease = (positionToAlter.Market.Bid - positionToAlter.Position.OpenLevel) / positionToAlter.Position.OpenLevel;
+                if (percentageIncrease > stopPercentage)
+                {
+                    double plannedStop = positionToAlter.Market.Bid - (positionToAlter.Market.Bid * stopPercentage);
+                    Console.WriteLine($"Postion to alter {positionToAlter.Market.InstrumentName} Current Stop {positionToAlter.Position.StopLevel} Planned new stop {plannedStop} ");
+                    positionToAlter.Position.StopLevel = plannedStop;
+                    igPositions.Put(session, positionToAlter.Position);
+                }
+            }
+            return 0;
         }
         static int PositionsList(PositionOptions options)
         {
@@ -95,8 +120,8 @@ namespace IgTrading
 
         static void SwitchAccount(string accountId)
         {
-            Console.WriteLine($"Switching to account Id {accountId}");
-            if (string.IsNullOrEmpty(accountId) == false)
+            Console.WriteLine($"Switching to account Id {accountId} from {session.CurrentAccountId} ");
+            if (string.IsNullOrEmpty(accountId) == false && session.CurrentAccountId != accountId)
             {
                 session = igTradingApiConfig.SwitchAccount(session, accountId);
             }
@@ -120,91 +145,59 @@ namespace IgTrading
             //session = igTradingApiConfig.SwitchAccount(session, "IST3L");
 
 
-            if (false)
+            // Console.WriteLine($"Security Token {session.SecurityToken} CST {session.CST}");
+            int i = 0;
+            switch (args[0])
             {
-                // Console.WriteLine($"Security Token {session.SecurityToken} CST {session.CST}");
-                int i = 0;
-                switch (args[0])
-                {
-
-                    case "order":
-                        string prefix = (args.Length == 4 ? args[3] : null);
-                        List<Market> toOrder = MarketSearch(args[1], args[2], prefix);
 
 
-                        foreach (Market market in toOrder)
+
+                case "buy":
+                    string prefix = (args.Length == 4 ? args[3] : null);
+                    List<Market> toBuy = MarketSearch(args[1], args[2], prefix);
+
+                    int positionCount = toBuy.Count();
+
+                    float toInvest = (float)(Convert.ToDouble(args[4]) / positionCount);
+
+                    foreach (Market market in toBuy)
+                    {
+
+                        float positionSize = (float)Math.Round(toInvest / market.Bid, 2);
+                        if (positionSize < 1)
                         {
-                            IgOrder igOrder = new IgOrder { epic = market.Epic, size = 1F, currencyCode = "GBP", level = (float)market.Bid, limitDistance = (float)(market.Bid * 0.2), stopDistance = (float)(market.Bid * 0.1), direction = "BUY", dealReference = $"NMCQ{i}", expiry = market.Expiry };
-                            i++;
-                            PlaceOrder(igOrder);
+                            positionSize = 1;
                         }
 
-                        break;
 
-                    case "buy":
-                        prefix = (args.Length == 4 ? args[3] : null);
-                        List<Market> toBuy = MarketSearch(args[1], args[2], prefix);
-
-                        int positionCount = toBuy.Count();
-
-                        float toInvest = (float)(Convert.ToDouble(args[4]) / positionCount);
-
-                        foreach (Market market in toBuy)
+                        IgBuy igBuy = new IgBuy
                         {
+                            currencyCode = "GBP",
+                            dealReference = $"NMCQ{i}",
+                            direction = "BUY",
+                            epic = market.Epic,
+                            expiry = market.Expiry,
+                            size = positionSize,
+                            limitDistance = (float)(market.Bid * 0.2),
+                            stopDistance = (float)(market.Bid * 0.1)
+                        };
+                        i++;
 
-                            float positionSize = (float)Math.Round(toInvest / market.Bid, 2);
-                            if (positionSize < 1)
-                            {
-                                positionSize = 1;
-                            }
-
-
-                            IgBuy igBuy = new IgBuy
-                            {
-                                currencyCode = "GBP",
-                                dealReference = $"NMCQ{i}",
-                                direction = "BUY",
-                                epic = market.Epic,
-                                expiry = market.Expiry,
-                                size = positionSize,
-                                limitDistance = (float)(market.Bid * 0.2),
-                                stopDistance = (float)(market.Bid * 0.1)
-                            };
-                            i++;
-
-                            if (args[5] == "EXCUTE")
-                            {
-                                Buy(igBuy);
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Will buy {market.InstrumentName} Position Size { positionSize } for value { Math.Round(positionSize * market.Bid, 2) } ");
-                            }
-
+                        if (args[5] == "EXCUTE")
+                        {
+                            Buy(igBuy);
                         }
-                        break;
-
-
-                    case "update":
-                        List<PositionElement> positionsToReturn = Positions();
-                        double stopPercentage = Convert.ToDouble(args[1]) / 100;
-
-                        foreach (PositionElement positionToAlter in positionsToReturn)
+                        else
                         {
-                            IgPositions igPositions = new IgPositions(environment, login);
-
-                            positionToAlter.Position.LimitLevel = positionToAlter.Market.Bid * 1.2;
-                            double percentageIncrease = (positionToAlter.Market.Bid - positionToAlter.Position.OpenLevel) / positionToAlter.Position.OpenLevel;
-                            if (percentageIncrease > stopPercentage)
-                            {
-                                positionToAlter.Position.StopLevel = positionToAlter.Market.Bid - (positionToAlter.Market.Bid * stopPercentage);
-                                igPositions.Put(session, positionToAlter.Position);
-                            }
+                            Console.WriteLine($"Will buy {market.InstrumentName} Position Size { positionSize } for value { Math.Round(positionSize * market.Bid, 2) } ");
                         }
 
-                        break;
-                }
+                    }
+                    break;
+
+
             }
+
 
 
 
@@ -270,7 +263,7 @@ namespace IgTrading
             }
 
             parsedList = parsedList.OrderBy(p => p.InstrumentName).ToList();
-            parsedList.ForEach(market => Console.WriteLine($"{market.InstrumentName.PadLeft(70)} // {market.Epic.ToString().PadRight(30)} Bid {market.Bid}\tExpiry {market.Expiry}"));
+            parsedList.ForEach(market => Console.WriteLine($"{market.InstrumentName.PadLeft(70)} // {market.Epic.ToString().PadRight(30)} Bid {market.Bid}\tExpiry {market.Expiry} Ticker { market.EpicModel.instrument.chartCode }"));
 
 
             Console.WriteLine($"Found {count} stocks.");
@@ -294,6 +287,6 @@ namespace IgTrading
             Console.WriteLine(response);
             response = new IgConfirms(environment, login).GetConfirms(session, igBuy.dealReference);
             Console.WriteLine(response);
-        } 
+        }
     }
 }

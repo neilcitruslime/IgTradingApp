@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using System.Threading.Tasks;
 using IgTrading.Models;
 using Newtonsoft.Json;
 
@@ -25,11 +26,15 @@ namespace IgTrading
             var response = httpClient.GetAsync(new Uri(igTradingApiConfig.EndPoint() + action)).Result;
             MarketSearchModel result = JsonConvert.DeserializeObject<MarketSearchModel>(response.Content.ReadAsStringAsync().Result);
 
-
+            Parallel.ForEach(result.Markets , (market) =>
+                                {
+                                    market.EpicModel = GetEpic(igSession, market.Epic);
+                                });
+       
             return result;
         }
 
-        public void GetEpic(SessionModel igSession, string epic)
+        public EpicModel GetEpic(SessionModel igSession, string epic)
         {
             string action = $"/markets/{epic}";
 
@@ -37,10 +42,9 @@ namespace IgTrading
             IgTradingApiConfig igTradingApiConfig  = new IgTradingApiConfig(environment, login);
 
             var response = httpClient.GetAsync(new Uri(igTradingApiConfig.EndPoint() + action)).Result;
-            //MarketSearchModel result = JsonConvert.DeserializeObject<MarketSearchModel>();
-            string data = response.Content.ReadAsStringAsync().Result;
-            Console.WriteLine(data.FormatJson());
-            //return result;
+            EpicModel result = JsonConvert.DeserializeObject<EpicModel>(response.Content.ReadAsStringAsync().Result);
+
+            return result;
         }
     }
 }

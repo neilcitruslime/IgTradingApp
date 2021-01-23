@@ -66,6 +66,8 @@ namespace IgTrading.Models
 
         [JsonProperty("scalingFactor")]
         public long ScalingFactor { get; set; }
+
+        public EpicModel EpicModel { get; set; }
     }
 
     public partial class PositionPosition
@@ -92,7 +94,7 @@ namespace IgTrading.Models
         public double OpenLevel { get; set; }
 
         [JsonProperty("currency")]
-        public Currency Currency { get; set; }
+        public string Currency { get; set; }
 
         [JsonProperty("controlledRisk")]
         public bool ControlledRisk { get; set; }
@@ -116,8 +118,6 @@ namespace IgTrading.Models
     public enum InstrumentType { Shares, Opt_Shares };
 
     public enum MarketStatus { Closed, EditsOnly };
-
-    public enum Currency { Gbp };
 
     public enum Direction { Buy };
 
