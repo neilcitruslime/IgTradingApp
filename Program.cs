@@ -130,10 +130,10 @@ namespace IgTrading
         static int ListAccounts(AccountOptions options)
         {
 
-            Console.WriteLine($"{"Name".PadRight(15)}Profit\tBalance\t{"Type".PadRight(10)}ID\tAlias");
+            Console.WriteLine($"{"Name".PadRight(15)}{"Profit".PadRight(10)}\t{"Balance".PadRight(10)}\t{"Type".PadRight(14)}Account ID");
             foreach (Account account in accountModels.Accounts)
             {
-                Console.WriteLine($"{account.AccountName.PadRight(15)} {account.Balance.ProfitLoss} \t{account.Balance.BalanceBalance}\t{account.AccountType.PadRight(10)}{account.AccountId}\t{account.AccountAlias}");
+                Console.WriteLine($"{account.AccountName.PadRight(15)} {account.Balance.ProfitLoss.ToString().PadRight(10)} \t{ Math.Round(account.Balance.BalanceBalance).ToString().PadRight(10)}\t{account.AccountType.PadRight(14)}{account.AccountId}");
             }
             return 0;
         }

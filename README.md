@@ -27,15 +27,15 @@ Build and run the application in the console, and run the app with --help and it
 
 Examples 
 
-# List Your Postions
-List positions including the total position size, and profits. 
-
-dotnet run positions
-
 # Will list all your accounts 
 Providing the account Id's which are used elsewhere. 
 
-dot run accounts 
+dotnet run accounts 
+
+# List Your Postions
+List positions including the total position size, and profits for a given account. 
+
+dotnet run positions --account 1234
 
 # Place an order
 Will order the Ig market API epic code KA.D.LLOY.SEP.IP. This is chartcode LLOY, which is Lloyds PLC on an expiry of Sep-21
@@ -43,11 +43,11 @@ The account is the account Id from the 'accounts' call, level is the buy point, 
 cash is the cash value to invest which is calculated back to the bid size. e.g. 350 cash at level 35 will open with a 10 position size = 350 
 expiry is required and is the expiry on the EPIC
 
-dotnet run order --direction BUY --account ISQ5F --level 35 --stopdistance 5 --limitdistance 10 --cash 350 --epic KA.D.LLOY.SEP.IP --expiry SEP-21
+dotnet run order --direction BUY --account 1234 --level 35 --stopdistance 5 --limitdistance 10 --cash 350 --epic KA.D.LLOY.SEP.IP --expiry SEP-21
 
 # Increase Stops to Perserve Profits
 If the profit is greater than 10% set the top to 10% less than the current market value.
-dotnet run updatestop --account ITOPW --value 10
+dotnet run updatestop --account 1234 --value 10
 
 Have fun.
 
