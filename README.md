@@ -49,6 +49,10 @@ dotnet run order --direction BUY --account 1234 --level 35 --stopdistance 5 --li
 If the profit is greater than 10% set the top to 10% less than the current market value.
 dotnet run updatestop --account 1234 --value 10
 
+# Buy a number of positions
+Buys positions based on a total value to purchase, will ask you to confirm positions prior to executing the trade. Stops and limits are set as a percentage of bids. This example buys Simon Thompson of Investors Chronicles Bargain Shares 2021 portfolio. 
+dotnet run buy --names "Anexo,Arix Bioscience,Canadian General Investments,Downing Strategic Micro-cap Investment Trust,Duke Royalty,Ramsdens Holdings,San Leon Energy,Springfield Properties,Vietnam Holding,Wynnstay Group"  --e SEP-21 --stopdistance 25 --limitdistance 50 --value 10000 --account 12345
+
 Have fun.
 
 Neil

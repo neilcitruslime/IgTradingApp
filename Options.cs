@@ -77,4 +77,34 @@ namespace IgTrading
 
         public string Expiry { get; set; }
     }
+
+
+    [Verb("buy", HelpText = "Preview and execute buy order. Takes the same options as a quote, will ask you to confirm execution.")]    
+    public class BuyOptions
+    {
+        [Option('a', "account", HelpText = "The account Id", Required = true)]
+        public string Account { get; set; }
+
+        [Option('n', "names", Required = true, HelpText = "The comma seperated list of names you wish to search for.")]
+        public string NamesToSearch { get; set; }
+
+        [Option("prefix", Required = false, HelpText = "The epic prefix you wish to filter by.")]
+
+        public string EpicPrefix { get; set; }
+
+        [Option('e', "expiry", Required = true, HelpText = "The expiry DFB for daily contracts, e.g. MAR-21 for expirty in March 2021.")]
+
+        public string Expiry { get; set; }
+
+        [Option('v', "value", HelpText = "The value to spread across positions in this buy, for example 10,000.", Required = true)]
+        public double Value { get; set; }
+
+        [Option("limitdistance", HelpText = "The percentage of bid to set as a limit. For example 25 would be 25 percent.", Required = true)]
+        public float LimitDistance { get; set; }
+
+
+        [Option("stopdistance", HelpText = "he percentage of bid to set as a stop. For example 25 would be 25 percent.", Required = true)]
+        public float StopDistance { get; set; }
+
+    }
 }

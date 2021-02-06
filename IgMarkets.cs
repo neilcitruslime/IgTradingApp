@@ -26,11 +26,14 @@ namespace IgTrading
             var response = httpClient.GetAsync(new Uri(igTradingApiConfig.EndPoint() + action)).Result;
             MarketSearchModel result = JsonConvert.DeserializeObject<MarketSearchModel>(response.Content.ReadAsStringAsync().Result);
 
-            Parallel.ForEach(result.Markets , (market) =>
-                                {
-                                    market.EpicModel = GetEpic(igSession, market.Epic);
-                                });
-       
+            // if (result.Markets!=null)
+            // {
+            //     Parallel.ForEach(result.Markets , (market) =>
+            //                     {
+            //                         market.EpicModel = GetEpic(igSession, market.Epic);
+            //                     });
+            // }
+                        
             return result;
         }
 
