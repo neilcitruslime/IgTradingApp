@@ -149,18 +149,18 @@ namespace IgTrading
             float toInvest = (float)(options.Value / positionCount);
 
             List<IgBuy> buyList = new List<IgBuy>();
-            int i = 0; 
+            int i = 0;
 
             Console.WriteLine($"Will buy");
             Console.WriteLine($"{"Name".PadRight(80)} {"Size".PadLeft(8)} {"Value".PadLeft(12)} {"Stop".PadLeft(10)} {"Limit".PadLeft(10)}");
-            double total  = 0 ;
+            double total = 0;
             foreach (Market market in toBuy)
             {
 
                 float positionSize = (float)Math.Round(toInvest / market.Bid, 2);
-                if (positionSize < 1)
+                if (positionSize < 0.24)
                 {
-                    positionSize = 1;
+                    positionSize = (float)0.0;
                 }
 
 
@@ -172,22 +172,41 @@ namespace IgTrading
                     epic = market.Epic,
                     expiry = market.Expiry,
                     size = positionSize,
-                    limitDistance = (float)(market.Bid * (options.LimitDistance/100)  ),
-                    stopDistance = (float)(market.Bid * (options.StopDistance/100))
+                    limitDistance = (float)(market.Bid * (options.LimitDistance / 100)),
+                    stopDistance = (float)(market.Bid * (options.StopDistance / 100))
                 };
                 i++;
 
                 buyList.Add(igBuy);
 
-                total += positionSize * market.Bid ;
-                             
-                Console.WriteLine($"{market.InstrumentName.PadRight(80)} { positionSize.ToString().PadRight(8) }  { Math.Round(positionSize * market.Bid, 2).ToString("N0").PadLeft(12) }   { (market.Bid - igBuy.stopDistance).ToString("N2").PadLeft(10)} {(market.Bid + igBuy.limitDistance).ToString("N2").PadLeft(10)} ");
-                
+                total += positionSize * market.Bid;
 
-                // Buy(igBuy);
+                Console.WriteLine($"{market.InstrumentName.PadRight(80)} { positionSize.ToString().PadRight(8) }  { Math.Round(positionSize * market.Bid, 2).ToString("N0").PadLeft(12) }   { (market.Bid - igBuy.stopDistance).ToString("N2").PadLeft(10)} {(market.Bid + igBuy.limitDistance).ToString("N2").PadLeft(10)}");
+
+
 
             }
+
+
             Console.WriteLine($"Your total risk will be { total.ToString("N0") }");
+
+            Console.WriteLine($"Do you wish to purchase?");
+            var letter = Console.ReadKey();
+
+            if (letter.Key == ConsoleKey.Y)
+            {
+                Console.WriteLine();
+
+                Console.WriteLine($"Executing Order...");
+                foreach (IgBuy buy in buyList)
+                {
+
+
+
+                    // Buy(igBuy);
+                }
+
+            }
 
             return 0;
         }
