@@ -62,6 +62,17 @@ namespace IgTrading
         [Option('v', "value", Required = true, HelpText = "The value to set for example 10, this will only adjust is the range increases the current value, for example when adjust a stop if the value here is 10 and the current value is 8% then no change will be made. ")]
         public int Value { get; set; }        
     }
+   
+    [Verb("alpha", HelpText = "Alpha Vantage Api query")]
+
+    class AlphaOptions
+    {
+        [Option('t', "ticker", HelpText = "The stock ticker", Required = true)]
+        public string Ticker { get; set; }
+        
+    }
+
+    
 
     [Verb("quote", HelpText = "Retrieve quotes")]
     class QuoteOptions

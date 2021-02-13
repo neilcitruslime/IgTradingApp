@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using CommandLine;
+using IgTrading.AlphaVantage;
 using IgTrading.Models;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -14,6 +15,7 @@ namespace IgTrading
 
         static EnumIgEnvironment environment = EnumIgEnvironment.Live;
         static SessionModel session;
+        static string alphaKey = string.Empty;
 
         static IgTradingApiConfig igTradingApiConfig;
         static AccountModels accountModels;
@@ -27,7 +29,7 @@ namespace IgTrading
             IgAccounts igAccounts = new IgAccounts(environment, login);
             accountModels = igAccounts.Get(session);
 
-            CommandLine.Parser.Default.ParseArguments<PositionOptions, AccountOptions, QuoteOptions, OrderOptions, UpdateOptions, BuyOptions>(args)
+            CommandLine.Parser.Default.ParseArguments<PositionOptions, AccountOptions, QuoteOptions, OrderOptions, UpdateOptions, BuyOptions, AlphaOptions>(args)
                .MapResult(
                    (PositionOptions opts) => PositionsList(opts),
                    (AccountOptions opts) => ListAccounts(opts),
@@ -35,7 +37,65 @@ namespace IgTrading
                    (OrderOptions opts) => Order(opts),
                    (UpdateOptions opts) => Update(opts),
                    (BuyOptions opts) => Buy(opts),
+                   (AlphaOptions opts) => Alpha(opts),
                    errs => 1);
+        }
+
+        private static int Alpha(AlphaOptions opts)
+        {
+            List<PriceModel> alphaPriceResult = new PriceQuery().Get(alphaKey, opts.Ticker) ;
+            List<RsiModel> alphaRsiResult = new RsiQuery().Get(alphaKey, opts.Ticker, 4);
+            List<SmaModel> alphaSmaResult = new SmaQuery().Get(alphaKey, opts.Ticker, 200);
+        
+            Dictionary<DateTime, ConsolidatedStockModel> stockDictionary = new Dictionary<DateTime, ConsolidatedStockModel>();
+
+            foreach(RsiModel rsiModel in alphaRsiResult)
+            {
+                ConsolidatedStockModel consolidatedStock;
+                if (!stockDictionary.ContainsKey(rsiModel.Time))
+                {
+                    consolidatedStock = new ConsolidatedStockModel();
+                    consolidatedStock.Rsi=rsiModel.Rsi;
+                    stockDictionary.Add(rsiModel.Time, consolidatedStock);
+                }
+                else
+                {
+                    stockDictionary[rsiModel.Time].Rsi=rsiModel.Rsi;
+                }                
+            }
+            
+            foreach(SmaModel smaModel in alphaSmaResult)
+            {
+                ConsolidatedStockModel consolidatedStock;
+                if (!stockDictionary.ContainsKey(smaModel.Time))
+                {
+                    consolidatedStock = new ConsolidatedStockModel();
+                    consolidatedStock.Sma200=smaModel.Sma;
+                    stockDictionary.Add(smaModel.Time, consolidatedStock);
+                }
+                else
+                {
+                    stockDictionary[smaModel.Time].Sma200=smaModel.Sma;
+                }                
+            }
+
+            foreach(PriceModel priceModel in alphaPriceResult){
+                                ConsolidatedStockModel consolidatedStock;
+                if (!stockDictionary.ContainsKey(priceModel.Time))
+                {
+                    consolidatedStock = new ConsolidatedStockModel();
+                    consolidatedStock.Close=priceModel.Close;
+                    stockDictionary.Add(priceModel.Time, consolidatedStock);
+                }
+                else
+                {
+                    stockDictionary[priceModel.Time].Close=priceModel.Close;
+                }   
+            }
+
+            Console.WriteLine(JsonConvert.SerializeObject(stockDictionary).FormatJson());
+
+            return 0;
         }
 
         private static void ReadConfiguration()
@@ -48,6 +108,7 @@ namespace IgTrading
             ClientFactory.ApiKey = config["apiKey"];
             login.Identifier = config["username"];
             login.Password = config["password"];
+            alphaKey=config["password"];
         }
 
         private static int Quote(QuoteOptions opts)
@@ -158,9 +219,9 @@ namespace IgTrading
             {
 
                 float positionSize = (float)Math.Round(toInvest / market.Bid, 2);
-                if (positionSize < 0.24)
+                if (positionSize < 0.5)
                 {
-                    positionSize = (float)0.0;
+                    positionSize = (float)0.5;
                 }
 
 
@@ -200,10 +261,7 @@ namespace IgTrading
                 Console.WriteLine($"Executing Order...");
                 foreach (IgBuy buy in buyList)
                 {
-
-
-
-                    // Buy(igBuy);
+                    Buy(buy);
                 }
 
             }
