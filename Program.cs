@@ -1,7 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Threading;
 using CommandLine;
+using CsvHelper;
 using IgTrading.AlphaVantage;
 using IgTrading.Models;
 using Microsoft.Extensions.Configuration;
@@ -43,59 +48,89 @@ namespace IgTrading
 
         private static int Alpha(AlphaOptions opts)
         {
-            List<PriceModel> alphaPriceResult = new PriceQuery().Get(alphaKey, opts.Ticker) ;
-            List<RsiModel> alphaRsiResult = new RsiQuery().Get(alphaKey, opts.Ticker, 4);
-            List<SmaModel> alphaSmaResult = new SmaQuery().Get(alphaKey, opts.Ticker, 200);
-        
-            Dictionary<DateTime, ConsolidatedStockModel> stockDictionary = new Dictionary<DateTime, ConsolidatedStockModel>();
 
-            foreach(RsiModel rsiModel in alphaRsiResult)
+            List<string> tickers = opts.Ticker.Trim(',').Split(',').ToList();
+
+            BuildAlphaModel buildAlphaModel = new BuildAlphaModel();
+
+            Dictionary<string, SortedDictionary<DateTime, ConsolidatedStockModel>> stockDataLibrary = new Dictionary<string, SortedDictionary<DateTime, ConsolidatedStockModel>>();
+
+            int count = tickers.Count; int i = 0;
+            foreach (string ticker in tickers)
             {
-                ConsolidatedStockModel consolidatedStock;
-                if (!stockDictionary.ContainsKey(rsiModel.Time))
+                try
                 {
-                    consolidatedStock = new ConsolidatedStockModel();
-                    consolidatedStock.Rsi=rsiModel.Rsi;
-                    stockDictionary.Add(rsiModel.Time, consolidatedStock);
+                    SortedDictionary<DateTime, ConsolidatedStockModel> stockDictionary = buildAlphaModel.Build(alphaKey, ticker);
+                    stockDataLibrary.Add(ticker, stockDictionary);
+                    Console.WriteLine($"Got Data for {ticker}");
                 }
-                else
+                catch
                 {
-                    stockDictionary[rsiModel.Time].Rsi=rsiModel.Rsi;
-                }                
-            }
-            
-            foreach(SmaModel smaModel in alphaSmaResult)
-            {
-                ConsolidatedStockModel consolidatedStock;
-                if (!stockDictionary.ContainsKey(smaModel.Time))
-                {
-                    consolidatedStock = new ConsolidatedStockModel();
-                    consolidatedStock.Sma200=smaModel.Sma;
-                    stockDictionary.Add(smaModel.Time, consolidatedStock);
+                    Console.WriteLine($"Failed to get ticker '{ticker}'");
                 }
-                else
+                
+                i++;                
+                if (i != count)
                 {
-                    stockDictionary[smaModel.Time].Sma200=smaModel.Sma;
-                }                
+                    Thread.Sleep(1000 * 60);
+                }
             }
 
-            foreach(PriceModel priceModel in alphaPriceResult){
-                                ConsolidatedStockModel consolidatedStock;
-                if (!stockDictionary.ContainsKey(priceModel.Time))
-                {
-                    consolidatedStock = new ConsolidatedStockModel();
-                    consolidatedStock.Close=priceModel.Close;
-                    stockDictionary.Add(priceModel.Time, consolidatedStock);
-                }
-                else
-                {
-                    stockDictionary[priceModel.Time].Close=priceModel.Close;
-                }   
-            }
+            Console.WriteLine("------------------");
+            RunStrategy(tickers, stockDataLibrary, 25, 55, 0);
+            RunStrategy(tickers, stockDataLibrary, 25, 55, 5);
+            RunStrategy(tickers, stockDataLibrary, 25, 55, 10);
+            RunStrategy(tickers, stockDataLibrary, 25, 55, 15);
+            RunStrategy(tickers, stockDataLibrary, 25, 55, 25);
 
-            Console.WriteLine(JsonConvert.SerializeObject(stockDictionary).FormatJson());
+            Console.WriteLine("------------------");
 
+            RunStrategy(tickers, stockDataLibrary, 45, 75, 0);
+            RunStrategy(tickers, stockDataLibrary, 45, 75, 5);
+            RunStrategy(tickers, stockDataLibrary, 45, 75, 10);
+            RunStrategy(tickers, stockDataLibrary, 45, 75, 15);
+            RunStrategy(tickers, stockDataLibrary, 45, 75, 25);
+            Console.WriteLine("------------------");
             return 0;
+        }
+
+        private static void RunStrategy(List<string> tickers, Dictionary<string, SortedDictionary<DateTime, ConsolidatedStockModel>> stockDataLibrary,
+            int rsiLow,
+            int rsiHigh,
+            int stopLoss)
+        {
+            List<PositionModel> totalPositions = new List<PositionModel>();
+
+            Console.WriteLine($"Running Stratgy with RSI {rsiLow}/{rsiHigh} Stop {stopLoss.ToString("P0")}");
+
+            foreach (string ticker in tickers)
+            {
+                SortedDictionary<DateTime, ConsolidatedStockModel> stockDictionary = stockDataLibrary[ticker];
+                List<PositionModel> positions = new StrategyRsi().RunBackTest(stockDictionary, rsiLow, rsiHigh, stopLoss);
+                PrintStrategyResults(positions, ticker);
+                totalPositions.AddRange(positions);
+            }
+
+
+            using (var writer = new StreamWriter($"rsiLow-{rsiLow}-rsiHigh{rsiHigh}-Stop{stopLoss}.csv"))
+            using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+            {
+                csv.WriteRecords(totalPositions);
+            }
+            PrintStrategyResults(totalPositions, "SUMMARY");
+        }
+
+        private static void PrintStrategyResults(List<PositionModel> positions, string ticker)
+        {
+            double profit = positions.Sum(p => p.CloseValue - p.OpenValue);
+            double wins = positions.Count(p => p.Win == true);
+            double loose = positions.Count(p => p.Win == false);
+
+            double daysOpen = positions.Average(p => (p.CloseDate - p.OpenDate).TotalDays);
+            double maxDays = positions.Max(p => (p.CloseDate - p.OpenDate).TotalDays);
+
+            int stops = positions.Count(p => p.Stop == true);
+            Console.WriteLine($"Market {ticker} Profit {profit.ToString("N2")} Total positions {positions.Count} Win Rate { (wins / positions.Count).ToString("P2")} Average Days Per Trade {daysOpen.ToString("N1")}. Stops {stops} Max Days {maxDays}.");
         }
 
         private static void ReadConfiguration()
@@ -108,7 +143,7 @@ namespace IgTrading
             ClientFactory.ApiKey = config["apiKey"];
             login.Identifier = config["username"];
             login.Password = config["password"];
-            alphaKey=config["password"];
+            alphaKey = config["password"];
         }
 
         private static int Quote(QuoteOptions opts)

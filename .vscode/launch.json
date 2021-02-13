@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/bin/Debug/netcoreapp3.1/IgTrading.dll",
-            "args": ["alpha","--t", "SPY"],
+            "args": ["alpha","--t", "SPY,GOOGL,NFLX,AMZN,FB,MSFT,AAPL,HUKX.LON,SPEM,RWO,IITU.LON,IUKD.LON,MIDD.LON,VNQ,SPEM,SMIN,IPAC"],
             "cwd": "${workspaceFolder}",
             "console": "internalConsole",
             "stopAtEntry": false
@@ -23,3 +23,4 @@
         }
     ]
 }
+

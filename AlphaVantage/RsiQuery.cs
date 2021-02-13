@@ -12,9 +12,9 @@ namespace IgTrading.AlphaVantage
 {
     public class RsiQuery : AlphaVantageAbstract
     {
-        public List<RsiModel> Get(string apiKey, string ticker, int timePeriod)
+        public List<RsiModel> Get(string apiKey, string ticker, int timePeriod, string type)
         {
-            string action = $"{ApiEndPoint}?function=RSI&symbol={ticker}&interval=daily&time_period={timePeriod}&series_type=close&apikey={apiKey}&datatype=csv";
+            string action = $"{ApiEndPoint}?function=RSI&symbol={ticker}&interval=daily&time_period={timePeriod}&series_type={type}&apikey={apiKey}&datatype=csv";
 
             HttpClient httpClient = new HttpClient();
             var response = httpClient.GetAsync(new Uri(action)).Result;
