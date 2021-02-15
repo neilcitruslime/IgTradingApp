@@ -60,7 +60,8 @@ namespace IgTrading
             {
                 try
                 {
-                    SortedDictionary<DateTime, ConsolidatedStockModel> stockDictionary = buildAlphaModel.Build(alphaKey, ticker);
+                    SortedDictionary<DateTime, ConsolidatedStockModel> stockDictionary;
+                    stockDictionary = buildAlphaModel.Build(alphaKey, ticker);
                     stockDataLibrary.Add(ticker, stockDictionary);
                     Console.WriteLine($"Got Data for {ticker}");
                 }
@@ -68,8 +69,8 @@ namespace IgTrading
                 {
                     Console.WriteLine($"Failed to get ticker '{ticker}'");
                 }
-                
-                i++;                
+
+                i++;
                 if (i != count)
                 {
                     Thread.Sleep(1000 * 60);
@@ -77,27 +78,39 @@ namespace IgTrading
             }
 
             Console.WriteLine("------------------");
-            RunStrategy(tickers, stockDataLibrary, 25, 55, 0);
-            RunStrategy(tickers, stockDataLibrary, 25, 55, 5);
-            RunStrategy(tickers, stockDataLibrary, 25, 55, 10);
-            RunStrategy(tickers, stockDataLibrary, 25, 55, 15);
-            RunStrategy(tickers, stockDataLibrary, 25, 55, 25);
+            RunStrategy(tickers, stockDataLibrary, 25, 55, 0, new StrategyRsi());
+            RunStrategy(tickers, stockDataLibrary, 25, 55, 5, new StrategyRsi());
+            RunStrategy(tickers, stockDataLibrary, 25, 55, 10, new StrategyRsi());
+            RunStrategy(tickers, stockDataLibrary, 25, 55, 15, new StrategyRsi());
+            RunStrategy(tickers, stockDataLibrary, 25, 55, 25, new StrategyRsi());
+
+
+            Console.WriteLine("------------------");
+            RunStrategy(tickers, stockDataLibrary, 25, 65, 0, new StrategyRsi());
+            RunStrategy(tickers, stockDataLibrary, 25, 65, 5, new StrategyRsi());
+            RunStrategy(tickers, stockDataLibrary, 25, 65, 10, new StrategyRsi());
+            RunStrategy(tickers, stockDataLibrary, 25, 65, 15, new StrategyRsi());
+            RunStrategy(tickers, stockDataLibrary, 25, 65, 25, new StrategyRsi());
+
 
             Console.WriteLine("------------------");
 
-            RunStrategy(tickers, stockDataLibrary, 45, 75, 0);
-            RunStrategy(tickers, stockDataLibrary, 45, 75, 5);
-            RunStrategy(tickers, stockDataLibrary, 45, 75, 10);
-            RunStrategy(tickers, stockDataLibrary, 45, 75, 15);
-            RunStrategy(tickers, stockDataLibrary, 45, 75, 25);
+            RunStrategy(tickers, stockDataLibrary, 45, 75, 0, new StrategyRsi());
+            RunStrategy(tickers, stockDataLibrary, 45, 75, 5, new StrategyRsi());
+            RunStrategy(tickers, stockDataLibrary, 45, 75, 10, new StrategyRsi());
+            RunStrategy(tickers, stockDataLibrary, 45, 75, 15, new StrategyRsi());
+            RunStrategy(tickers, stockDataLibrary, 45, 75, 25, new StrategyRsi());
             Console.WriteLine("------------------");
             return 0;
         }
 
-        private static void RunStrategy(List<string> tickers, Dictionary<string, SortedDictionary<DateTime, ConsolidatedStockModel>> stockDataLibrary,
+        private static void RunStrategy(
+            List<string> tickers, 
+            Dictionary<string, SortedDictionary<DateTime, ConsolidatedStockModel>> stockDataLibrary,
             int rsiLow,
             int rsiHigh,
-            int stopLoss)
+            int stopLoss, 
+            IStrategy strategy)
         {
             List<PositionModel> totalPositions = new List<PositionModel>();
 
@@ -106,11 +119,11 @@ namespace IgTrading
             foreach (string ticker in tickers)
             {
                 SortedDictionary<DateTime, ConsolidatedStockModel> stockDictionary = stockDataLibrary[ticker];
-                List<PositionModel> positions = new StrategyRsi().RunBackTest(stockDictionary, rsiLow, rsiHigh, stopLoss);
+                List<PositionModel> positions = strategy.RunBackTest(stockDictionary, rsiLow, rsiHigh, stopLoss);
+                // new StrategyRsi().RunRsiBackTest(stockDictionary, rsiLow, rsiHigh, stopLoss);
                 PrintStrategyResults(positions, ticker);
                 totalPositions.AddRange(positions);
             }
-
 
             using (var writer = new StreamWriter($"rsiLow-{rsiLow}-rsiHigh{rsiHigh}-Stop{stopLoss}.csv"))
             using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))

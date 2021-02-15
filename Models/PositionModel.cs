@@ -36,5 +36,7 @@ namespace IgTrading.Models
         public DateTime OpenDate {get;set;}
         public DateTime CloseDate {get;set;}
         public bool Stop { get; set; }
+
+        public bool PassedRsiHigh { get; set; } = false;
     }
 }
