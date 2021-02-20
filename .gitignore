@@ -350,3 +350,5 @@ MigrationBackup/
 .ionide/
 
 appsettings-secure.json
+
+*.csv
