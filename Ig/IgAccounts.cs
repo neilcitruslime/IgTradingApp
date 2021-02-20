@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using IgTrading.Ig.Models;
 using IgTrading.Models;
 using Newtonsoft.Json;
 
@@ -17,15 +18,15 @@ namespace IgTrading.Ig
             this.environment = environment;
         }
 
-        public AccountModels Get(SessionModel igSession)
+        public AccountModels Get(IgSessionModel igSession)
         {
             string action = "/accounts";
-            HttpClient httpClient = ClientFactory.Create(igSession, 1);
+            IgHttpClient igHttpClient = new IgHttpClient(environment, login); //ClientFactory.Create(igSession, 1);
             IgTradingApiConfig igTradingApiConfig = new IgTradingApiConfig(environment, login);
 
-            var response = httpClient.GetAsync(new Uri(igTradingApiConfig.EndPoint() + action)).Result;
+            string json = igHttpClient.Get(igSession, action,1);
 
-            return JsonConvert.DeserializeObject<AccountModels>(response.Content.ReadAsStringAsync().Result);
+            return JsonConvert.DeserializeObject<AccountModels>(json);
         }
 
     }

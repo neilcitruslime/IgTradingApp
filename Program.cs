@@ -1,16 +1,16 @@
-﻿using System;
-using System.Collections;
+﻿using CommandLine;
+using CsvHelper;
+using IgTrading.AlphaVantage;
+using IgTrading.Ig;
+using IgTrading.Ig.Models;
+using IgTrading.Models;
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using CommandLine;
-using CsvHelper;
-using IgTrading.AlphaVantage;
-using IgTrading.Models;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
 
 namespace IgTrading
 {
@@ -19,7 +19,7 @@ namespace IgTrading
         public static LoginModel login = new LoginModel();
 
         static EnumIgEnvironment environment = EnumIgEnvironment.Live;
-        static SessionModel session;
+        static IgSessionModel session;
         static string alphaKey = string.Empty;
 
         static IgTradingApiConfig igTradingApiConfig;
@@ -41,7 +41,7 @@ namespace IgTrading
                    (QuoteOptions opts) => Quote(opts),
                    (OrderOptions opts) => Order(opts),
                    (UpdateOptions opts) => Update(opts),
-                   (BuyOptions opts) => Buy(opts),  
+                   (BuyOptions opts) => Buy(opts),
                    (AlphaOptions opts) => Alpha(opts),
                    errs => 1);
         }
@@ -65,9 +65,9 @@ namespace IgTrading
                     stockDataLibrary.Add(ticker, stockDictionary);
                     Console.WriteLine($"Got Data for {ticker}");
                 }
-                catch
+                catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to get ticker '{ticker}'");
+                    Console.WriteLine($"Failed to get ticker '{ticker} Message {ex.Message}'");
                 }
 
                 i++;
@@ -91,7 +91,7 @@ namespace IgTrading
 
             finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 45, 85, 10, new StrategyRsiBuyOnStrength()));
             finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 45, 85, 0, new StrategyRsiBuyOnStrength()));
-            
+
             // finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 35, 85, 0, new StrategyRsiBuyOnStrength()));
             // finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 25, 85, 0, new StrategyRsiBuyOnStrength()));
 
@@ -196,7 +196,7 @@ namespace IgTrading
             ClientFactory.ApiKey = config["apiKey"];
             login.Identifier = config["username"];
             login.Password = config["password"];
-            alphaKey = config["password"];
+            alphaKey = config["alphavantagekey"];
         }
 
         private static int Quote(QuoteOptions opts)
@@ -212,7 +212,7 @@ namespace IgTrading
 
             float positionSize = 1F;
 
-            IgOrder igOrder = new IgOrder { epic = options.Epic, size = positionSize, currencyCode = "GBP", level = options.Level, limitDistance = options.LimitDistance, stopDistance = options.StopDistance, direction = options.Direction.ToUpper(), dealReference = $"NMCQReference{1}", expiry = options.Expiry };
+            IgOrderModel igOrder = new IgOrderModel { epic = options.Epic, size = positionSize, currencyCode = "GBP", level = options.Level, limitDistance = options.LimitDistance, stopDistance = options.StopDistance, direction = options.Direction.ToUpper(), dealReference = $"NMCQReference{1}", expiry = options.Expiry };
 
             IgMarkets igMarkets = new IgMarkets(environment, login);
             EpicModel epic = igMarkets.GetEpic(session, options.Epic);
@@ -297,7 +297,7 @@ namespace IgTrading
 
             float toInvest = (float)(options.Value / positionCount);
 
-            List<IgBuy> buyList = new List<IgBuy>();
+            List<IgBuyModel> buyList = new List<IgBuyModel>();
             int i = 0;
 
             Console.WriteLine($"Will buy");
@@ -313,7 +313,7 @@ namespace IgTrading
                 }
 
 
-                IgBuy igBuy = new IgBuy
+                IgBuyModel igBuy = new IgBuyModel
                 {
                     currencyCode = "GBP",
                     dealReference = $"NMCQ{i}",
@@ -347,7 +347,7 @@ namespace IgTrading
                 Console.WriteLine();
 
                 Console.WriteLine($"Executing Order...");
-                foreach (IgBuy buy in buyList)
+                foreach (IgBuyModel buy in buyList)
                 {
                     Buy(buy);
                 }
@@ -418,7 +418,7 @@ namespace IgTrading
             }
 
             parsedList = parsedList.OrderBy(p => p.InstrumentName).ToList();
-            parsedList.ForEach(market => Console.WriteLine($"{market.InstrumentName.PadLeft(70)} // {market.Epic.ToString().PadRight(30)} Bid {market.Bid}\tExpiry {market.Expiry} Ticker { (market.EpicModel?.instrument==null ? "No Chart Code" : market.EpicModel.instrument.chartCode) }"));
+            parsedList.ForEach(market => Console.WriteLine($"{market.InstrumentName.PadLeft(70)} // {market.Epic.ToString().PadRight(30)} Bid {market.Bid}\tExpiry {market.Expiry} Ticker { (market.EpicModel?.instrument == null ? "No Chart Code" : market.EpicModel.instrument.chartCode) }"));
 
 
             Console.WriteLine($"Found {count} stocks.");
@@ -426,7 +426,7 @@ namespace IgTrading
             return parsedList;
         }
 
-        public static void PlaceOrder(IgOrder igOrder)
+        public static void PlaceOrder(IgOrderModel igOrder)
         {
             IgWorkingOrder igWorkingOrder = new IgWorkingOrder(environment, login);
             var response = igWorkingOrder.Post(session, igOrder);
@@ -435,7 +435,7 @@ namespace IgTrading
             Console.WriteLine(response);
         }
 
-        public static void Buy(IgBuy igBuy)
+        public static void Buy(IgBuyModel igBuy)
         {
             IgPositions igPosition = new IgPositions(environment, login);
             var response = igPosition.Post(session, igBuy);

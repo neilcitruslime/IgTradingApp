@@ -1,8 +1,8 @@
 using System.Net.Http;
-using IgTrading.Models;
+using IgTrading.Ig.Models;
 
 namespace IgTrading
-{ 
+{
     public class ClientFactory
     {
         public static string ApiKey { set; get; } 
@@ -16,7 +16,7 @@ namespace IgTrading
             return httpClient;
         }            
 
-        public static HttpClient Create(SessionModel igSession, int version)
+        public static HttpClient Create(IgSessionModel igSession, int version)
         {
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Add("X-IG-API-KEY", ApiKey);

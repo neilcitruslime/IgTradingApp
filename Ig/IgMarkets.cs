@@ -1,10 +1,11 @@
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using IgTrading.Ig.Models;
 using IgTrading.Models;
 using Newtonsoft.Json;
 
-namespace IgTrading
+namespace IgTrading.Ig
 {
     public class IgMarkets
     {
@@ -16,7 +17,7 @@ namespace IgTrading
             this.login = login;
             this.environment = environment;
         }
-        public MarketSearchModel Get(SessionModel igSession, string term, bool getDetail)
+        public MarketSearchModel Get(IgSessionModel igSession, string term, bool getDetail)
         {
             string action = "/markets?searchTerm=" + term;
 
@@ -37,7 +38,7 @@ namespace IgTrading
             return result;
         }
 
-        public EpicModel GetEpic(SessionModel igSession, string epic)
+        public EpicModel GetEpic(IgSessionModel igSession, string epic)
         {
             string action = $"/markets/{epic}";
 

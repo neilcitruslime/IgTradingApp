@@ -1,11 +1,11 @@
+using IgTrading.Ig.Models;
+using IgTrading.Models;
+using Newtonsoft.Json;
 using System;
 using System.Net.Http;
 using System.Text;
-using IgTrading.Models;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
-namespace IgTrading
+namespace IgTrading.Ig
 {
     public class IgWorkingOrder
     {
@@ -17,7 +17,7 @@ namespace IgTrading
             this.login = login;
             this.environment = environment;
         }
-        public string Post(SessionModel igSession, IgOrder igOrder)
+        public string Post(IgSessionModel igSession, IgOrderModel igOrder)
         {
             string action = "/workingorders/otc";
             HttpClient httpClient = ClientFactory.Create(igSession, 2);
@@ -30,8 +30,8 @@ namespace IgTrading
             string result = response.Content.ReadAsStringAsync().Result;
 
             return result;
-        }      
+        }
 
-       
+
     }
 }

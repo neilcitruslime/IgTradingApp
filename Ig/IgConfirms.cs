@@ -1,8 +1,9 @@
 using System;
 using System.Net.Http;
+using IgTrading.Ig.Models;
 using IgTrading.Models;
 
-namespace IgTrading
+namespace IgTrading.Ig
 {
     public class IgConfirms
     {
@@ -15,7 +16,7 @@ namespace IgTrading
             this.login = login;
         }
         
-        public string GetConfirms(SessionModel igSession, string dealReference)
+        public string GetConfirms(IgSessionModel igSession, string dealReference)
         {
             string action = $"/confirms/{dealReference}";
             HttpClient httpClient = ClientFactory.Create(igSession, 1);

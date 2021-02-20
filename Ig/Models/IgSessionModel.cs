@@ -1,12 +1,8 @@
-namespace IgTrading.Models
+namespace IgTrading.Ig.Models
 {
-    using System;
-    using System.Collections.Generic;
-
-    using System.Globalization;
     using IgTrading.Models;
     using Newtonsoft.Json;
-    using Newtonsoft.Json.Converters;
+    using System;
 
     public partial class IgSessionModel
     {

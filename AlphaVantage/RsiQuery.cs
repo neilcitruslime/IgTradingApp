@@ -10,21 +10,13 @@ using IgTrading.Models;
 
 namespace IgTrading.AlphaVantage
 {
-    public class RsiQuery : AlphaVantageAbstract
+    public class RsiQuery : AlphaVantageAbstract<RsiModel>
     {
         public List<RsiModel> Get(string apiKey, string ticker, int timePeriod, string type)
         {
             string action = $"{ApiEndPoint}?function=RSI&symbol={ticker}&interval=daily&time_period={timePeriod}&series_type={type}&apikey={apiKey}&datatype=csv";
 
-            HttpClient httpClient = new HttpClient();
-            var response = httpClient.GetAsync(new Uri(action)).Result;
-           // RsiModel result = JsonConvert.DeserializeObject<RsiModel>(response.Content.ReadAsStringAsync().Result);
-
-            using (var reader = new StreamReader(response.Content.ReadAsStreamAsync().Result))
-            using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
-            {
-                return csv.GetRecords<RsiModel>().OrderByDescending(p=>p.Time).ToList();
-            }
+            return GetData(action).OrderByDescending(p => p.Time).ToList();
         }
     }
 }

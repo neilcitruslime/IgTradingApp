@@ -29,9 +29,7 @@ namespace IgTrading.AlphaVantage
             List<PriceModel> alphaPriceResult = new PriceQuery().Get(alphaKey, ticker);
             List<RsiModel> alphaRsiResult = new RsiQuery().Get(alphaKey, ticker, 4, "low");
             List<RsiModel> alphaRsiResultHigh = new RsiQuery().Get(alphaKey, ticker, 4, "high");
-            List<SmaModel> alphaSmaResult = new SmaQuery().Get(alphaKey, ticker, 200);
-            
-            Thread.Sleep(1000*60);
+            List<SmaModel> alphaSmaResult = new SmaQuery().Get(alphaKey, ticker, 200);            
 
             SortedDictionary<DateTime, ConsolidatedStockModel> stockDictionary = new SortedDictionary<DateTime, ConsolidatedStockModel>();
 

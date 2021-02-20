@@ -1,5 +1,6 @@
-﻿namespace IgTrading
+﻿namespace IgTrading.Ig
 {
+    using IgTrading.Ig.Models;
     using IgTrading.Models;
     using Newtonsoft.Json;
     using System;
@@ -35,25 +36,25 @@
             }
         }
 
-        public SessionModel Session()
+        public IgSessionModel Session()
         {
             string action = "/session";
 
             HttpClient httpClient = ClientFactory.Create();
-            
+
             var content = new StringContent(JsonConvert.SerializeObject(login), Encoding.UTF8, "application/json");
 
             string Url = EndPoint() + action;
             var responseMessage = httpClient.PostAsync(new Uri(Url), content).Result;
-            SessionModel igSession = GetSession(responseMessage);
+            IgSessionModel igSession = GetSession(responseMessage);
 
             return igSession;
         }
 
-        private static SessionModel GetSession(HttpResponseMessage responseMessage)
+        private static IgSessionModel GetSession(HttpResponseMessage responseMessage)
         {
-            string content =responseMessage.Content.ReadAsStringAsync().Result;
-            SessionModel igSession = JsonConvert.DeserializeObject<SessionModel>(content);
+            string content = responseMessage.Content.ReadAsStringAsync().Result;
+            IgSessionModel igSession = JsonConvert.DeserializeObject<IgSessionModel>(content);
 
             if (responseMessage.Headers.TryGetValues("CST", out var values))
             {
@@ -61,7 +62,8 @@
             }
             else
             {
-                foreach (var header in responseMessage.Headers){
+                foreach (var header in responseMessage.Headers)
+                {
                     Console.WriteLine($"{header.Key} / {header.Value}");
                     Console.WriteLine(content);
                     Console.WriteLine("Status Code -----------" + responseMessage.StatusCode);
@@ -82,14 +84,14 @@
             return igSession;
         }
 
-        public SessionModel SwitchAccount(SessionModel igSession, string accountId)
+        public IgSessionModel SwitchAccount(IgSessionModel igSession, string accountId)
         {
             string action = "/session";
-            HttpClient httpClient = ClientFactory.Create(igSession , 1);
+            HttpClient httpClient = ClientFactory.Create(igSession, 1);
             string json = JsonConvert.SerializeObject(new { accountId = accountId });
 
-            
-            StringContent content = new StringContent(json , Encoding.UTF8, "application/json");
+
+            StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
             string Url = EndPoint() + action;
             var responseMessage = httpClient.PutAsync(new Uri(Url), content).Result;
@@ -106,8 +108,8 @@
             {
                 throw new Exception("Cannot find the security token in the response headers.");
             }
-            
-            return igSession ;
+
+            return igSession;
         }
     }
 

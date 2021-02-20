@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "IgTrading": {
+      "commandName": "Project",
+      "commandLineArgs": "quote --n apple --e SEP-21 -d 1"
+    }
+  }
+}
