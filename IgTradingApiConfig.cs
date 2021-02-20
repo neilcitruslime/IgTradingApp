@@ -52,7 +52,8 @@
 
         private static SessionModel GetSession(HttpResponseMessage responseMessage)
         {
-            SessionModel igSession = JsonConvert.DeserializeObject<SessionModel>(responseMessage.Content.ReadAsStringAsync().Result);
+            string content =responseMessage.Content.ReadAsStringAsync().Result;
+            SessionModel igSession = JsonConvert.DeserializeObject<SessionModel>(content);
 
             if (responseMessage.Headers.TryGetValues("CST", out var values))
             {
@@ -60,6 +61,12 @@
             }
             else
             {
+                foreach (var header in responseMessage.Headers){
+                    Console.WriteLine($"{header.Key} / {header.Value}");
+                    Console.WriteLine(content);
+                    Console.WriteLine("Status Code -----------" + responseMessage.StatusCode);
+                }
+
                 throw new Exception("Cannot find the CST token in the response headers.");
             }
 

@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using IgTrading.Models;
+using IgTrading.Store;
+using Newtonsoft.Json;
 
 namespace IgTrading.AlphaVantage
 {
@@ -8,10 +11,27 @@ namespace IgTrading.AlphaVantage
     {
         public SortedDictionary<DateTime, ConsolidatedStockModel> Build(string alphaKey, string ticker)
         {
+           
+            SortedDictionary<DateTime, ConsolidatedStockModel> stockDictionary;
+            string savedJson = FileStore.GetFile(ticker);
+            if (savedJson == string.Empty)
+            {
+                stockDictionary = GetData(alphaKey, ticker);
+                FileStore.StoreFile(ticker, JsonConvert.SerializeObject(stockDictionary), DateTime.Now);
+            }else
+            {
+                stockDictionary  = JsonConvert.DeserializeObject<SortedDictionary<DateTime, ConsolidatedStockModel>>(savedJson);
+            }
+            return stockDictionary;
+        }
+        private SortedDictionary<DateTime, ConsolidatedStockModel> GetData(string alphaKey, string ticker)
+        {
             List<PriceModel> alphaPriceResult = new PriceQuery().Get(alphaKey, ticker);
             List<RsiModel> alphaRsiResult = new RsiQuery().Get(alphaKey, ticker, 4, "low");
             List<RsiModel> alphaRsiResultHigh = new RsiQuery().Get(alphaKey, ticker, 4, "high");
             List<SmaModel> alphaSmaResult = new SmaQuery().Get(alphaKey, ticker, 200);
+            
+            Thread.Sleep(1000*60);
 
             SortedDictionary<DateTime, ConsolidatedStockModel> stockDictionary = new SortedDictionary<DateTime, ConsolidatedStockModel>();
 

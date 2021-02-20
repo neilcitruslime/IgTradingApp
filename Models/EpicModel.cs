@@ -124,18 +124,18 @@ namespace IgTrading.Models
     public class Snapshot
     {
         public string marketStatus { get; set; }
-        public float netChange { get; set; }
-        public float percentageChange { get; set; }
+        public double? netChange { get; set; }
+        public double? percentageChange { get; set; }
         public string updateTime { get; set; }
-        public int delayTime { get; set; }
-        public float bid { get; set; }
-        public float offer { get; set; }
-        public float high { get; set; }
-        public float low { get; set; }
+        public int? delayTime { get; set; }
+        public float? bid { get; set; }
+        public float? offer { get; set; }
+        public float? high { get; set; }
+        public float? low { get; set; }
         public object binaryOdds { get; set; }
-        public int decimalPlacesFactor { get; set; }
-        public int scalingFactor { get; set; }
-        public float controlledRiskExtraSpread { get; set; }
+        public int? decimalPlacesFactor { get; set; }
+        public int? scalingFactor { get; set; }
+        public float? controlledRiskExtraSpread { get; set; }
     }
 
 }

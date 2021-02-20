@@ -16,7 +16,7 @@ namespace IgTrading
             this.login = login;
             this.environment = environment;
         }
-        public MarketSearchModel Get(SessionModel igSession, string term)
+        public MarketSearchModel Get(SessionModel igSession, string term, bool getDetail)
         {
             string action = "/markets?searchTerm=" + term;
 
@@ -26,13 +26,13 @@ namespace IgTrading
             var response = httpClient.GetAsync(new Uri(igTradingApiConfig.EndPoint() + action)).Result;
             MarketSearchModel result = JsonConvert.DeserializeObject<MarketSearchModel>(response.Content.ReadAsStringAsync().Result);
 
-            // if (result.Markets!=null)
-            // {
-            //     Parallel.ForEach(result.Markets , (market) =>
-            //                     {
-            //                         market.EpicModel = GetEpic(igSession, market.Epic);
-            //                     });
-            // }
+            if (result.Markets!=null && getDetail)
+            {
+                Parallel.ForEach(result.Markets , (market) =>
+                                {
+                                    market.EpicModel = GetEpic(igSession, market.Epic);
+                                });
+            }
                         
             return result;
         }

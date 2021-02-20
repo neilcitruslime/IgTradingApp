@@ -60,19 +60,19 @@ namespace IgTrading
         public string Account { get; set; }
 
         [Option('v', "value", Required = true, HelpText = "The value to set for example 10, this will only adjust is the range increases the current value, for example when adjust a stop if the value here is 10 and the current value is 8% then no change will be made. ")]
-        public int Value { get; set; }        
+        public int Value { get; set; }
     }
-   
+
     [Verb("alpha", HelpText = "Alpha Vantage Api query")]
 
     class AlphaOptions
     {
         [Option('t', "ticker", HelpText = "The stock ticker", Required = true)]
         public string Ticker { get; set; }
-        
+
     }
 
-    
+
 
     [Verb("quote", HelpText = "Retrieve quotes")]
     class QuoteOptions
@@ -87,10 +87,13 @@ namespace IgTrading
         [Option('e', "expiry", Required = true, HelpText = "The expiry DFB for daily contracts, e.g. MAR-21 for expirty in March 2021.")]
 
         public string Expiry { get; set; }
+
+        [Option('d', "detail", Required = false, HelpText = "Get the detail about the stock from the stock API.")]
+        public bool Detail { get; set; }
     }
 
 
-    [Verb("buy", HelpText = "Preview and execute buy order. Takes the same options as a quote, will ask you to confirm execution.")]    
+    [Verb("buy", HelpText = "Preview and execute buy order. Takes the same options as a quote, will ask you to confirm execution.")]
     public class BuyOptions
     {
         [Option('a', "account", HelpText = "The account Id", Required = true)]

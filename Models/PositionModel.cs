@@ -4,6 +4,7 @@ namespace IgTrading.Models
 {
     public class PositionModel
     {
+        public string Ticker { get; set;}
         public double Size { get; set; }
         public double Open { get; set; }
 
@@ -33,10 +34,10 @@ namespace IgTrading.Models
             }
         }
 
-        public DateTime OpenDate {get;set;}
-        public DateTime CloseDate {get;set;}
+        public DateTime OpenDate { get; set; }
+        public DateTime CloseDate { get; set; }
         public bool Stop { get; set; }
 
-        public bool PassedRsiHigh { get; set; } = false;
+        public bool PassedTest { get; set; } = false;
     }
 }

@@ -41,7 +41,7 @@ namespace IgTrading
                    (QuoteOptions opts) => Quote(opts),
                    (OrderOptions opts) => Order(opts),
                    (UpdateOptions opts) => Update(opts),
-                   (BuyOptions opts) => Buy(opts),
+                   (BuyOptions opts) => Buy(opts),  
                    (AlphaOptions opts) => Alpha(opts),
                    errs => 1);
         }
@@ -71,47 +71,68 @@ namespace IgTrading
                 }
 
                 i++;
-                if (i != count)
-                {
-                    Thread.Sleep(1000 * 60);
-                }
+
             }
+            List<StrategyResultsModel> finalResults = new List<StrategyResultsModel>();
 
-            Console.WriteLine("------------------");
-            RunStrategy(tickers, stockDataLibrary, 25, 55, 0, new StrategyRsi());
-            RunStrategy(tickers, stockDataLibrary, 25, 55, 5, new StrategyRsi());
-            RunStrategy(tickers, stockDataLibrary, 25, 55, 10, new StrategyRsi());
-            RunStrategy(tickers, stockDataLibrary, 25, 55, 15, new StrategyRsi());
-            RunStrategy(tickers, stockDataLibrary, 25, 55, 25, new StrategyRsi());
+            //finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, 25, 55, 0, new StrategyRsi()));
+            // //finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, 25, 55, 25, new StrategyRsi()));
+
+            DateTime from = new DateTime(2021, 1, 1);
+            DateTime to = new DateTime(2021, 2, 18);
+
+            finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 25, 75, 0, new StrategyBuyAndHold()));
+            //finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 25, 55, 0, new StrategyRsi()));
+
+            // //finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, 25, 65, 25, new StrategyRsi()));
+
+            //finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from,to,45, 85, 0, new StrategyRsi()));
+            //finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from,to,45, 55, 0, new StrategyRsiHold()));
+
+            finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 45, 85, 10, new StrategyRsiBuyOnStrength()));
+            finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 45, 85, 0, new StrategyRsiBuyOnStrength()));
+            
+            // finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 35, 85, 0, new StrategyRsiBuyOnStrength()));
+            // finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 25, 85, 0, new StrategyRsiBuyOnStrength()));
+
+            // finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 45, 55, 0, new StrategyRsiBuyOnStrength()));
+            // finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 35, 55, 0, new StrategyRsiBuyOnStrength()));
+            // finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 25, 55, 0, new StrategyRsiBuyOnStrength()));
+
+            //finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 45, 85, 0, new StrategyRsiBuyOnStrength()));
+
+            //finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 45, 85, 0, new StrategyRsi()));
+
+            // Console.WriteLine("Start Advantaged");
+            // finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, 25, 55, 0, new StrategyRsiHold()));
+            // //finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, 25, 55, 25, new StrategyRsiHold()));
+
+            // finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, 25, 65, 0, new StrategyRsiHold()));
+            // //finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, 25, 65, 25, new StrategyRsiHold()));
+
+            //finalResults.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 25, 75, 0, new StrategyRsiHold()));
+            //.AddRange(RunStrategy(tickers, stockDataLibrary, from, to, 45, 85, 0, new StrategyRsiHold()));
+
+            PrintStrategyHeader();
+            finalResults.Where(p => p.Ticker != "SUMMARY").OrderByDescending(p => p.Ticker).ToList().ForEach(p => PrintStrategyResults(p));
+
+            finalResults.Where(p => p.Ticker == "SUMMARY").ToList().ForEach(p => PrintStrategyResults(p));
 
 
-            Console.WriteLine("------------------");
-            RunStrategy(tickers, stockDataLibrary, 25, 65, 0, new StrategyRsi());
-            RunStrategy(tickers, stockDataLibrary, 25, 65, 5, new StrategyRsi());
-            RunStrategy(tickers, stockDataLibrary, 25, 65, 10, new StrategyRsi());
-            RunStrategy(tickers, stockDataLibrary, 25, 65, 15, new StrategyRsi());
-            RunStrategy(tickers, stockDataLibrary, 25, 65, 25, new StrategyRsi());
-
-
-            Console.WriteLine("------------------");
-
-            RunStrategy(tickers, stockDataLibrary, 45, 75, 0, new StrategyRsi());
-            RunStrategy(tickers, stockDataLibrary, 45, 75, 5, new StrategyRsi());
-            RunStrategy(tickers, stockDataLibrary, 45, 75, 10, new StrategyRsi());
-            RunStrategy(tickers, stockDataLibrary, 45, 75, 15, new StrategyRsi());
-            RunStrategy(tickers, stockDataLibrary, 45, 75, 25, new StrategyRsi());
-            Console.WriteLine("------------------");
             return 0;
         }
 
-        private static void RunStrategy(
-            List<string> tickers, 
+        private static List<StrategyResultsModel> RunStrategy(
+            List<string> tickers,
             Dictionary<string, SortedDictionary<DateTime, ConsolidatedStockModel>> stockDataLibrary,
+            DateTime from, DateTime to,
             int rsiLow,
             int rsiHigh,
-            int stopLoss, 
+            int stopLoss,
             IStrategy strategy)
         {
+            string strategyName = $"{strategy.GetType().Name.PadRight(10)}  RsiLow {rsiLow} RsiHigh {rsiHigh} Stop {((double)stopLoss / 100).ToString("P0")}";
+            List<StrategyResultsModel> strategyResults = new List<StrategyResultsModel>();
             List<PositionModel> totalPositions = new List<PositionModel>();
 
             Console.WriteLine($"Running Stratgy with RSI {rsiLow}/{rsiHigh} Stop {stopLoss.ToString("P0")}");
@@ -119,31 +140,50 @@ namespace IgTrading
             foreach (string ticker in tickers)
             {
                 SortedDictionary<DateTime, ConsolidatedStockModel> stockDictionary = stockDataLibrary[ticker];
-                List<PositionModel> positions = strategy.RunBackTest(stockDictionary, rsiLow, rsiHigh, stopLoss);
-                // new StrategyRsi().RunRsiBackTest(stockDictionary, rsiLow, rsiHigh, stopLoss);
-                PrintStrategyResults(positions, ticker);
-                totalPositions.AddRange(positions);
+                List<PositionModel> positions = strategy.RunBackTest(ticker, stockDictionary, from, to, rsiLow, rsiHigh, stopLoss);
+                if (positions.Any())
+                {
+                    strategyResults.Add(BuildResults(strategyName, positions, ticker));
+
+                    totalPositions.AddRange(positions);
+                }
             }
 
-            using (var writer = new StreamWriter($"rsiLow-{rsiLow}-rsiHigh{rsiHigh}-Stop{stopLoss}.csv"))
+            using (var writer = new StreamWriter($"{strategy.GetType().Name}-{rsiLow}-rsiHigh{rsiHigh}-Stop{stopLoss}.csv"))
             using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
             {
                 csv.WriteRecords(totalPositions);
             }
-            PrintStrategyResults(totalPositions, "SUMMARY");
+            if (totalPositions.Any())
+            {
+
+                strategyResults.Add(BuildResults(strategyName, totalPositions, "SUMMARY"));
+            }
+            return strategyResults;
         }
 
-        private static void PrintStrategyResults(List<PositionModel> positions, string ticker)
+
+        private static StrategyResultsModel BuildResults(string name, List<PositionModel> positions, string ticker)
         {
             double profit = positions.Sum(p => p.CloseValue - p.OpenValue);
             double wins = positions.Count(p => p.Win == true);
             double loose = positions.Count(p => p.Win == false);
 
+
             double daysOpen = positions.Average(p => (p.CloseDate - p.OpenDate).TotalDays);
             double maxDays = positions.Max(p => (p.CloseDate - p.OpenDate).TotalDays);
-
+            double totalDays = positions.Sum(p => (p.CloseDate - p.OpenDate).TotalDays);
             int stops = positions.Count(p => p.Stop == true);
-            Console.WriteLine($"Market {ticker} Profit {profit.ToString("N2")} Total positions {positions.Count} Win Rate { (wins / positions.Count).ToString("P2")} Average Days Per Trade {daysOpen.ToString("N1")}. Stops {stops} Max Days {maxDays}.");
+            return new StrategyResultsModel() { Ticker = ticker, Stops = stops, WinRate = wins / positions.Count, Profit = profit, MaxDays = Convert.ToInt32(maxDays), AverageDays = daysOpen, PositionsTaken = positions.Count(), Name = name, TotalDays = totalDays };
+        }
+        private static void PrintStrategyResults(StrategyResultsModel resultsModel)
+        {
+            Console.WriteLine($"{resultsModel.Ticker.PadRight(12)}{ resultsModel.Name.PadRight(60)}| {resultsModel.Profit.ToString("N2").PadRight(10)}{resultsModel.PositionsTaken.ToString().PadRight(15)}{ resultsModel.WinRate.ToString("P2").PadRight(10)}{resultsModel.AverageDays.ToString("N1").PadRight(12)}{resultsModel.Stops.ToString().PadRight(6)}{resultsModel.MaxDays.ToString().PadRight(8)}{resultsModel.TotalDays.ToString().PadRight(10)}");
+        }
+
+        private static void PrintStrategyHeader()
+        {
+            Console.WriteLine($"{"Market".PadRight(12)}{"Name".PadRight(60)}| {"Profit".PadRight(10)}{"PositionsTaken".PadRight(15)}{ "WinRate".PadRight(10)}{"AverageDays".PadRight(12)}{"Stops".ToString().PadRight(6)}{"MaxDays".ToString().PadRight(8)}{"TotalDays".PadRight(10)}");
         }
 
         private static void ReadConfiguration()
@@ -161,7 +201,7 @@ namespace IgTrading
 
         private static int Quote(QuoteOptions opts)
         {
-            MarketSearch(opts.NamesToSearch.Trim(','), opts.Expiry, opts.EpicPrefix);
+            MarketSearch(opts.NamesToSearch.Trim(','), opts.Expiry, opts.EpicPrefix, opts.Detail);
             return 0;
         }
 
@@ -251,7 +291,7 @@ namespace IgTrading
         public static int Buy(BuyOptions options)
         {
             SwitchAccount(options.Account);
-            List<Market> toBuy = MarketSearch(options.NamesToSearch.Trim(','), options.Expiry, options.EpicPrefix);
+            List<Market> toBuy = MarketSearch(options.NamesToSearch.Trim(','), options.Expiry, options.EpicPrefix, false);
 
             int positionCount = toBuy.Count();
 
@@ -347,7 +387,7 @@ namespace IgTrading
             return positionsToReturn;
         }
 
-        public static List<Market> MarketSearch(string query, string expiry, string prefix)
+        public static List<Market> MarketSearch(string query, string expiry, string prefix, bool getDetail)
         {
             IgMarkets igMarkets = new IgMarkets(environment, login);
             string[] quotes = query.Split(',');
@@ -357,7 +397,7 @@ namespace IgTrading
 
             foreach (string ticker in quotes)
             {
-                MarketSearchModel marketSearch = igMarkets.Get(session, ticker);
+                MarketSearchModel marketSearch = igMarkets.Get(session, ticker, getDetail);
 
 
                 if (marketSearch != null && marketSearch.Markets != null)
@@ -378,7 +418,7 @@ namespace IgTrading
             }
 
             parsedList = parsedList.OrderBy(p => p.InstrumentName).ToList();
-            parsedList.ForEach(market => Console.WriteLine($"{market.InstrumentName.PadLeft(70)} // {market.Epic.ToString().PadRight(30)} Bid {market.Bid}\tExpiry {market.Expiry} ")); //Ticker { (market.EpicModel.instrument==null ? "No Chart Code" : market.EpicModel.instrument.chartCode) }"));
+            parsedList.ForEach(market => Console.WriteLine($"{market.InstrumentName.PadLeft(70)} // {market.Epic.ToString().PadRight(30)} Bid {market.Bid}\tExpiry {market.Expiry} Ticker { (market.EpicModel?.instrument==null ? "No Chart Code" : market.EpicModel.instrument.chartCode) }"));
 
 
             Console.WriteLine($"Found {count} stocks.");

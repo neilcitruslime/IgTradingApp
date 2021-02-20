@@ -7,7 +7,7 @@ namespace IgTrading.AlphaVantage
 {
     public class StrategyRsi : IStrategy
     {
-        public List<PositionModel> RunBackTest(SortedDictionary<DateTime, ConsolidatedStockModel> stockDictionary, int rsiLow, int rsiHigh, int stopLoss)
+        public List<PositionModel> RunBackTest(string ticker, SortedDictionary<DateTime, ConsolidatedStockModel> stockDictionary, DateTime from, DateTime to, int rsiLow, int rsiHigh, int stopLoss)
         {
             IDictionaryEnumerator myEnumerator =
                      stockDictionary.GetEnumerator();
@@ -22,7 +22,7 @@ namespace IgTrading.AlphaVantage
                 ConsolidatedStockModel model = (ConsolidatedStockModel)myEnumerator.Value;
                 DateTime date = (DateTime)myEnumerator.Key;
 
-                if (date >= new DateTime(2020, 1, 1))
+                if (date >= from && date<=to)
                 {
                     
                     if (model.RsiLow <= rsiLow && openPosition == null && model.Sma200 <= model.Close)
@@ -35,7 +35,7 @@ namespace IgTrading.AlphaVantage
                     {
                         openPosition.Close = model.Close;
                         openPosition.CloseDate = date;
-                        positions.Add(new PositionModel() { Open = openPosition.Open, Close = openPosition.Close, Size = openPosition.Size, OpenDate = openPosition.OpenDate, CloseDate = openPosition.CloseDate });
+                        positions.Add(new PositionModel() { Ticker=ticker, Open = openPosition.Open, Close = openPosition.Close, Size = openPosition.Size, OpenDate = openPosition.OpenDate, CloseDate = openPosition.CloseDate });
 
                         Console.WriteLine($"Sell Date {date} Rsi Low {model.RsiLow} Profit {(openPosition.CloseValue - openPosition.OpenValue).ToString("N2")} Open {openPosition.Open} Close {openPosition.Close}");
 
@@ -47,9 +47,9 @@ namespace IgTrading.AlphaVantage
                         openPosition.Close = model.Close;
                         openPosition.CloseDate = date;
                         openPosition.Stop = true;
-                        positions.Add(new PositionModel() { Open = openPosition.Open, Close = openPosition.Close, Size = openPosition.Size, OpenDate = openPosition.OpenDate, CloseDate = openPosition.CloseDate, Stop = openPosition.Stop });
+                        positions.Add(new PositionModel() { Ticker=ticker, Open = openPosition.Open, Close = openPosition.Close, Size = openPosition.Size, OpenDate = openPosition.OpenDate, CloseDate = openPosition.CloseDate, Stop = openPosition.Stop });
                         Console.WriteLine($"Date {date} Rsi Low {model.RsiLow}");
-                        Console.WriteLine($"Sell STOP LOSS Profit {(openPosition.OpenValue-openPosition.CloseValue).ToString("N2")}");
+                        Console.WriteLine($"Sell STOP LOSS Profit {(openPosition.CloseValue-openPosition.OpenValue).ToString("N2")}");
                         openPosition = null;
 
                     }
