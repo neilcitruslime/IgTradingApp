@@ -16,6 +16,21 @@ namespace IgTrading
 
     }
 
+    [Verb("execute", HelpText = "Execute Strategy.")]
+    class ExecuteOptions
+    {
+        [Option('a', "account", HelpText = "The account Id", Required = true)]
+        public string Account { get; set; }
+
+        [Option('s', "strategy", HelpText = "The strategy to execute", Required = true)]
+        public string StrategyName { get; set; }
+
+        [Option("value", HelpText = "The value per position", Required = true)]
+        public int Value { get; set; }
+
+        [Option('t', "ticker", HelpText = "The stock ticker", Required = true)]
+        public string Ticker { get; set; }
+    }
 
     [Verb("order", HelpText = "Place an order for a specific epic.")]
     class OrderOptions
@@ -27,8 +42,8 @@ namespace IgTrading
         [Option("epic", Required = true, HelpText = "The IG Epic code which you wish to place an order for")]
         public string Epic { get; set; }
 
-        [Option("cash", HelpText = "The cash value for the position you wish to open, if this is less than 1 point a position with one point will be opned")]
-        public int CashValue { get; set; }
+        [Option('p', "positionsize", Required = true, HelpText = "The position size to order")]
+        public float PositionSize { get; set; }
 
         [Option("direction", HelpText = "buy to create a buy order or sell to create a sell order", Required = true)]
         public string Direction { get; set; }
@@ -90,6 +105,9 @@ namespace IgTrading
 
         [Option('d', "detail", Required = false, HelpText = "Get the detail about the stock from the stock API.")]
         public bool Detail { get; set; }
+
+        [Option("exclude", HelpText = "Exlude these terms, provide a CSV seperated list", Required = false)]
+        public string Exlude { get; set; } = string.Empty;
     }
 
 
@@ -120,5 +138,7 @@ namespace IgTrading
         [Option("stopdistance", HelpText = "he percentage of bid to set as a stop. For example 25 would be 25 percent.", Required = true)]
         public float StopDistance { get; set; }
 
+        [Option("exclude", HelpText = "Exlude these terms, provide a CSV seperated list", Required = false)]
+        public string Exlude { get; set; } = string.Empty;
     }
 }

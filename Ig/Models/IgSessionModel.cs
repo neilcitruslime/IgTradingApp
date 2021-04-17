@@ -1,6 +1,5 @@
 namespace IgTrading.Ig.Models
 {
-    using IgTrading.Models;
     using Newtonsoft.Json;
     using System;
 

@@ -8,6 +8,7 @@
     using System.Net;
     using System.Net.Http;
     using System.Text;
+    using System.Threading;
 
     public class IgTradingApiConfig
     {
@@ -15,18 +16,17 @@
         private static string Demo = "https://demo-api.ig.com/";
         private static string Live = "https://api.ig.com/";
 
-        EnumIgEnvironment environment;
+        public static EnumIgEnvironment Environment;
         private readonly LoginModel login;
 
-        public IgTradingApiConfig(EnumIgEnvironment environment, LoginModel login)
-        {
-            this.environment = environment;
+        public IgTradingApiConfig(LoginModel login)
+        {            
             this.login = login;
         }
 
-        public string EndPoint()
+        public static string EndPoint()
         {
-            if (environment == EnumIgEnvironment.Live)
+            if (Environment == EnumIgEnvironment.Live)
             {
                 return $"{Live}{ApiEndPoint}";
             }
@@ -45,30 +45,35 @@
             var content = new StringContent(JsonConvert.SerializeObject(login), Encoding.UTF8, "application/json");
 
             string Url = EndPoint() + action;
-            var responseMessage = httpClient.PostAsync(new Uri(Url), content).Result;
-            IgSessionModel igSession = GetSession(responseMessage);
+            string result = string.Empty;
+            HttpResponseMessage responseMessage =null;
+            while (string.IsNullOrWhiteSpace(result))
+            {
+                responseMessage = httpClient.PostAsync(new Uri(Url), content).Result;
+                result = responseMessage.Content.ReadAsStringAsync().Result;
+                if (result.Contains("error.public-api.exceeded-api-key-allowance"))
+                {
+                    result = string.Empty;
+                    Thread.Sleep(1000 * 60);
+                }
+            }
+
+            IgSessionModel igSession = GetSession(responseMessage, result);
 
             return igSession;
         }
 
-        private static IgSessionModel GetSession(HttpResponseMessage responseMessage)
+        private static IgSessionModel GetSession(HttpResponseMessage responseMessage, string content)
         {
-            string content = responseMessage.Content.ReadAsStringAsync().Result;
-            IgSessionModel igSession = JsonConvert.DeserializeObject<IgSessionModel>(content);
 
+            IgSessionModel igSession = JsonConvert.DeserializeObject<IgSessionModel>(content);
+  
             if (responseMessage.Headers.TryGetValues("CST", out var values))
             {
                 igSession.CST = values.First();
             }
             else
-            {
-                foreach (var header in responseMessage.Headers)
-                {
-                    Console.WriteLine($"{header.Key} / {header.Value}");
-                    Console.WriteLine(content);
-                    Console.WriteLine("Status Code -----------" + responseMessage.StatusCode);
-                }
-
+            {  
                 throw new Exception("Cannot find the CST token in the response headers.");
             }
 

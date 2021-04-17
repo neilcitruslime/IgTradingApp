@@ -1,0 +1,5 @@
+Buy mining screen
+dotnet run buy --names "Ervaz,Severstal,rio tinto plc,vedanta resources, Ferrexpo,Kaiser Aluminium,Posco,Anglo american plc,Antofagasta,Nucor" --expiry DFB --value 20000 --limitdistance 30 --stopdistance 10 --account ???? --exclude "(SA)"
+
+Buy REIT income screen
+dotnet run buy --names "alternative income REIT,Globalworth Real Estate,Highcroft,Newriver,Prs REIT,Real Estate Investors PLC,Regional REIT,Residential Secure Income,Standard Life Investments P, Triple Point Housing" --expiry DFB --exclude "Marimo" --account ??? --limitdistance 33 --stopdistance 25 --value 20000

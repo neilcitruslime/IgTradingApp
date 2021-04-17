@@ -1,6 +1,6 @@
-namespace IgTrading.Models
+namespace IgTrading.Ig.Models
 {
-    public class EpicModel
+    public class IgEpicModel
     {
         public Instrument instrument { get; set; }
         public Dealingrules dealingRules { get; set; }

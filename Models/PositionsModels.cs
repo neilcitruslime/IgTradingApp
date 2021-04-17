@@ -3,6 +3,7 @@
 namespace IgTrading.Models
 {
     using System;
+    using IgTrading.Ig.Models;
     using Newtonsoft.Json;
     public partial class PositionsList
     {
@@ -67,7 +68,8 @@ namespace IgTrading.Models
         [JsonProperty("scalingFactor")]
         public long ScalingFactor { get; set; }
 
-        public EpicModel EpicModel { get; set; }
+        public IgEpicModel EpicModel { get; set; }
+        public string Ticker { get; set; }
     }
 
     public partial class PositionPosition

@@ -2,7 +2,8 @@
   "profiles": {
     "IgTrading": {
       "commandName": "Project",
-      "commandLineArgs": "quote --n apple --e SEP-21 -d 1"
+      "commandLineArgs": "execute --ticker \"MSFT\" --value 100 --account TEST --strategy TEST",
+      "workingDirectory": "C:\\Users\\Neil\\OneDrive\\Documents\\repos\\IgTradingApp"
     }
   }
 }

@@ -18,16 +18,13 @@ namespace IgTrading.Ig
             this.environment = environment;
         }
 
-        public AccountModels Get(IgSessionModel igSession)
+        public IgAccountModels Get(IgSessionModel igSession)
         {
             string action = "/accounts";
-            IgHttpClient igHttpClient = new IgHttpClient(environment, login); //ClientFactory.Create(igSession, 1);
-            IgTradingApiConfig igTradingApiConfig = new IgTradingApiConfig(environment, login);
-
+            IgHttpClient igHttpClient = new IgHttpClient(); 
             string json = igHttpClient.Get(igSession, action,1);
 
-            return JsonConvert.DeserializeObject<AccountModels>(json);
+            return JsonConvert.DeserializeObject<IgAccountModels>(json);
         }
-
     }
 }

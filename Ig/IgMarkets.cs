@@ -9,44 +9,56 @@ namespace IgTrading.Ig
 {
     public class IgMarkets
     {
-        private readonly LoginModel login;
-        private EnumIgEnvironment environment;
+        private IgHttpClient igHttpClient = new IgHttpClient();
 
-        public IgMarkets(EnumIgEnvironment environment, LoginModel login)
-        {
-            this.login = login;
-            this.environment = environment;
-        }
         public MarketSearchModel Get(IgSessionModel igSession, string term, bool getDetail)
         {
             string action = "/markets?searchTerm=" + term;
 
-            HttpClient httpClient = ClientFactory.Create(igSession, 1);
-            IgTradingApiConfig igTradingApiConfig  = new IgTradingApiConfig(environment, login);
 
-            var response = httpClient.GetAsync(new Uri(igTradingApiConfig.EndPoint() + action)).Result;
-            MarketSearchModel result = JsonConvert.DeserializeObject<MarketSearchModel>(response.Content.ReadAsStringAsync().Result);
+            string json = igHttpClient.Get(igSession, action, 1);
+            MarketSearchModel result = JsonConvert.DeserializeObject<MarketSearchModel>(json);
 
-            if (result.Markets!=null && getDetail)
+            if (result.Markets != null && getDetail)
             {
-                Parallel.ForEach(result.Markets , (market) =>
+                foreach (var market in result.Markets)
+                {
+                    string ticker = string.Empty;
+                    if (!IgEpicMapper.TryLookupCode(market.Epic, out ticker))                    
+                    {
+                        IgEpicModel epicModel = GetEpic(igSession, market.Epic);
+                        if (!string.IsNullOrWhiteSpace(epicModel.instrument.chartCode))
+                        {
+                            if (epicModel.instrument.country != "US")
+                            {
+                                if (epicModel.instrument.country=="GB")
                                 {
-                                    market.EpicModel = GetEpic(igSession, market.Epic);
-                                });
-            }
+                                    epicModel.instrument.country = "LON";
+                                }
+
+                                epicModel.instrument.chartCode += "." + epicModel.instrument.country;
+                            }
+
+                            IgEpicMapper.AddCode(market.Epic, epicModel.instrument.chartCode);
+                            ticker = epicModel.instrument.chartCode;
+                        }
                         
+                    }
+                    
+                    market.Ticker = ticker;
+                    Console.WriteLine($"{market.Ticker} {market.InstrumentName}");
+                }
+            }
+
             return result;
         }
 
-        public EpicModel GetEpic(IgSessionModel igSession, string epic)
+        public IgEpicModel GetEpic(IgSessionModel igSession, string epic)
         {
             string action = $"/markets/{epic}";
+            string json = igHttpClient.Get(igSession, action, 1);
 
-            HttpClient httpClient = ClientFactory.Create(igSession, 1);
-            IgTradingApiConfig igTradingApiConfig  = new IgTradingApiConfig(environment, login);
-
-            var response = httpClient.GetAsync(new Uri(igTradingApiConfig.EndPoint() + action)).Result;
-            EpicModel result = JsonConvert.DeserializeObject<EpicModel>(response.Content.ReadAsStringAsync().Result);
+            IgEpicModel result = JsonConvert.DeserializeObject<IgEpicModel>(json);
 
             return result;
         }
